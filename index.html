@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <form id="form-item" class="row mt-2" action="">
+            <label class="col-2 mt-2" for="">Item</label>
+            <div class="col-7">
+                <input class="form-control " type="text" name="item">
+            </div>
+            <button class="btn btn-primary col-3" type="submit">Enviar</button>
+        </form>
+
+        <ul id="my-list" class="list-group mt-4">
+
+        </ul>
+    </div>
+
+    <script>
+
+        var { ipcRenderer } = require('electron')
+
+        var list = []
+
+        ipcRenderer.send('item-send')
+        ipcRenderer.on('item-all', (event, data) => {
+            list = data
+            itemsPrint()
+        })
+
+        function itemsPrint() {
+            document.querySelector("#my-list").innerHTML = ""
+
+            for (i = 0; i < list.length; i++) {
+                item = document.createElement("li")
+                item.textContent = list[i].name
+                item.className = "list-group-item d-flex justify-content-between align-items-center"
+                item.setAttribute("data-id", list[i].id)
+
+                b = document.createElement("button")
+                b.className = "btn btn-danger item-delete"
+                b.addEventListener("click", itemDelete)
+
+                ic = document.createElement("i")
+                ic.className = "fa fa-trash"
+                b.appendChild(ic)
+
+                item.appendChild(b)
+
+                document.querySelector("#my-list").appendChild(item)
+            }
+        }
+
+        //document.querySelector(".item-delete").addEventListener("click",itemDelete)
+        function itemDelete(event) {
+
+            console.log("borrar " + event.target.tagName)
+
+            if (event.target.tagName == "I")
+                item = event.target.parentElement.parentElement
+            else
+                item = event.target.parentElement
+
+            //list.find(item => item.id == 1582798643121)
+
+            var itemID = item.getAttribute("data-id")
+            list.find(function (value, index) {
+                if (value && value.id == itemID) {
+                    console.log("Elemento a borrar: " + value.name)
+                    list.splice(index, 1)
+                    itemsPrint()
+                    ipcRenderer.send('item-delete', itemID)
+                }
+
+            })
+
+            //list.splice(item.getAttribute("data-id"),1)
+
+            /* if (event.target.tagName == "I") {
+                 item.remove()
+             } else {
+                 item.remove()
+             }*/
+            // itemsPrint()
+            //
+
+        }
+
+        function itemCreate() {
+            item = document.querySelector("[name=item]")
+
+            if (item.value.trim() != "") {
+                //list.push(item.value.trim())
+                ipcRenderer.send('item-save', item.value.trim())
+                ipcRenderer.send('item-send')
+            }
+
+            item.value = ""
+            //itemsPrint()
+        }
+
+        document.querySelector("#form-item").addEventListener("submit", createItem)
+        function createItem(event) {
+            event.preventDefault()
+            itemCreate()
+        }
+
+        document.querySelector("[name=item]").addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                itemCreate()
+            }
+        });
+
+
+    </script>
+
+    <script>
+        window.jQuery = window.$ = require('jquery')
+    </script>
+
+    <script src="./node_modules/@popperjs/core/dist/umd/popper.min.js"></script>
+    <script src="./node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>
